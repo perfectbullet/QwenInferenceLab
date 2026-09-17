@@ -28,7 +28,7 @@
 |---|---|
 | 推理服务 | `http://192.168.8.231:8000/v1`（容器名 `vllm-qwen38`，模型名 `qwen38-27b`，max_model_len=32768） |
 | SSH | `ssh zenking@192.168.8.231`（本机已配免密；用户名是 zenking，不是 zj） |
-| 模型路径 | `/nfs-data/metahuman_work/models/Inferact/Qwen3.8-27B-NVFP4`（含 MTP 权重 `nvfp4_experts_mtp.safetensors`） |
+| 模型路径 | `/data/metahuman_work/models/Inferact/Qwen3.8-27B-NVFP4`（含 MTP 权重 `nvfp4_experts_mtp.safetensors`） |
 | vLLM 镜像 | `vllm/vllm-openai:qwen38`（不要换 latest 或其他 tag） |
 | 题库 | `/home/zj/math_model_deployment/math_eval_pipeline/data/math_qa_275_20260617.mineru.filled_reference_answer-v2.jsonl`（275 题，只读，勿改写） |
 | 推理脚本 | `/home/zj/math_model_deployment/math_eval_pipeline/tir_math/run_model_tir_inference_concurrent.py` |
@@ -95,7 +95,7 @@ docker stop vllm-qwen38 && docker rename vllm-qwen38 vllm-qwen38-nospec
 
 # 3) 启动 MTP 容器（唯一区别：多了 --speculative-config）
 docker run -d --gpus all --name vllm-qwen38-mtp \
-  -v /nfs-data/metahuman_work/models/Inferact/Qwen3.8-27B-NVFP4:/model \
+  -v /data/metahuman_work/models/Inferact/Qwen3.8-27B-NVFP4:/model \
   -p 8000:8000 \
   --restart unless-stopped \
   vllm/vllm-openai:qwen38 \
