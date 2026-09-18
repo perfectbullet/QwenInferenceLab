@@ -1,0 +1,2 @@
+.source-image { margin-top: 16px; padding-top: 14px; border-top: 1px solid #edf0ee; }
+.source-image img { display: block; max-width: 100%; height: auto; max-height: 560px; object-fit: contain; object-position: left top; margin-top: 14px; border-radius: 6px; cursor: zoom-in; }

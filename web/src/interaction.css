@@ -1,0 +1,5 @@
+.copy-button { font-size: 12px; padding: 6px 10px; margin-left: auto; }
+.reference-copy { display: flex; margin-top: 14px; }
+.reasoning { background: #f4f7f5; border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.reasoning summary span { color: #83948b; font-size: 11px; }
+.reasoning pre { max-height: 360px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
