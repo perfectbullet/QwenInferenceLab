@@ -11,6 +11,7 @@ import { QuestionStore, RunStore } from './store.js';
 import { connectDatabase } from './database.js';
 import { QuestionImages } from './images.js';
 import { ModelStore, validateModel } from './models.js';
+import { runStream } from './run-stream.js';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const { client, db } = await connectDatabase();
 const store = new RunStore(db);
@@ -106,11 +107,9 @@ app.post('/api/run', async (req, reply) => {
   const controller = new AbortController(); active = { run, controller };
   try { await store.save(run); } catch (e) { active = null; throw e; }
   reply.hijack(); reply.raw.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
-  const emit = (event: Record<string, unknown>) => { if (!reply.raw.destroyed) reply.raw.write(`data: ${JSON.stringify(event)}\n\n`); };
+  const stream = runStream(reply.raw);
+  const emit = stream.emit;
   emit({ type: 'started', run });
-  const close = () => { if (!reply.raw.writableEnded) controller.abort('cancelled'); };
-  reply.raw.on('close', close);
-  const heartbeat = setInterval(() => { if (!reply.raw.destroyed) reply.raw.write(': heartbeat\n\n'); }, 10000);
   const timeout = setTimeout(() => controller.abort('timeout'), Number(process.env.MODEL_TIMEOUT_MS || 900000));
   try {
     await infer(run, base, controller.signal, emit, async () => {
@@ -119,7 +118,7 @@ app.post('/api/run', async (req, reply) => {
     await store.save(run);
     emit({ type: 'done', run });
   } catch { emit({ type: 'error', error: '运行记录保存失败，请检查数据库连接' }); }
-  finally { clearInterval(heartbeat); clearTimeout(timeout); active = null; reply.raw.off('close', close); reply.raw.end(); }
+  finally { clearTimeout(timeout); active = null; stream.end(); }
 });
 const dist = path.join(root, 'dist');
 try {

@@ -41,19 +41,30 @@ function App() {
   }
   useEffect(() => {
     Promise.all([api<Question[]>('/api/questions'), api<Run[]>('/api/runs')])
-      .then(([qs, rs]) => { setQuestions(qs); setSelected(qs[0]?.id || ''); setRuns(rs); })
+      .then(([qs, rs]) => {
+        let remembered = '';
+        try { remembered = sessionStorage.getItem('math-lab-question') || ''; } catch { /* Storage may be unavailable. */ }
+        setQuestions(qs); setSelected(qs.find(q => q.id === remembered)?.id || qs[0]?.id || ''); setRuns(rs);
+      })
       .catch(e => setError(String(e)));
   }, []);
+  useEffect(() => {
+    if (selected) try { sessionStorage.setItem('math-lab-question', selected); } catch { /* Optional preference. */ }
+  }, [selected]);
   useEffect(() => { if (!hasActive) return; const id = setInterval(() => setTick(Date.now()), 250); return () => clearInterval(id); }, [hasActive]);
   useEffect(() => {
     if (busy) return;
     let disposed = false;
+    let polling = false;
     const poll = async () => {
+      if (polling) return;
+      polling = true;
       try {
         const active = await api<Run | null>('/api/active-run');
         const records = await api<Run[]>('/api/runs');
         if (!disposed) { setRemoteRun(active); setRuns(records); }
       } catch(e) { if (!disposed) setError(String(e)); }
+      finally { polling = false; }
     };
     void poll(); const id = setInterval(poll, 2000);
     return () => { disposed = true; clearInterval(id); };

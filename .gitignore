@@ -5,3 +5,4 @@ data/runs/
 test-results/
 .git-local/
 images/*
+data/archive/math_qa_275_20260617.mineru.filled_reference_answer-v2.jsonl
