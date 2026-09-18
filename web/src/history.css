@@ -1,0 +1,18 @@
+.history button {
+  display: grid;
+  grid-template-columns: 1.15fr 1.25fr 1.7fr auto;
+  align-items: center;
+  gap: 15px;
+  text-align: left;
+}
+
+.history button span:last-child { text-align: right; }
+
+@media (max-width: 1000px) {
+  .history button { grid-template-columns: 1fr 1fr; }
+  .history button span:last-child { text-align: left; }
+}
+
+@media (max-width: 650px) {
+  .history button { grid-template-columns: 1fr; }
+}

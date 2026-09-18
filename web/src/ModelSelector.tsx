@@ -8,7 +8,7 @@ async function api<T>(url: string, method = 'GET', body?: unknown): Promise<T> {
 export function ModelSelector({ value, onChange, disabled }: { value: ModelConfig | null; onChange: (value: ModelConfig | null) => void; disabled: boolean }) {
   const [models, setModels] = useState<ModelConfig[]>([]);
   const [working, setWorking] = useState(false); const [error, setError] = useState('');
-  const [baseUrl, setBaseUrl] = useState(''); const [modelName, setModelName] = useState('');
+  const [baseUrl, setBaseUrl] = useState(''); const [modelName, setModelName] = useState(''); const [apiKey, setApiKey] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
   useEffect(() => {
     let disposed = false;
@@ -26,9 +26,9 @@ export function ModelSelector({ value, onChange, disabled }: { value: ModelConfi
   async function save() {
     setWorking(true); setError('');
     try {
-      const saved = await api<ModelConfig>(editId ? `/api/models/${editId}` : '/api/models', editId ? 'PATCH' : 'POST', { baseUrl, modelName });
+      const saved = await api<ModelConfig>(editId ? `/api/models/${editId}` : '/api/models', editId ? 'PATCH' : 'POST', { baseUrl, modelName, ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}) });
       const settings = await api<ModelSettings>('/api/models'); setModels(settings.models);
-      await choose(saved); setEditId(null); setBaseUrl(''); setModelName('');
+      await choose(saved); setEditId(null); setBaseUrl(''); setModelName(''); setApiKey('');
     } catch(e) { setError(String(e)); }
     finally { setWorking(false); }
   }
@@ -37,9 +37,10 @@ export function ModelSelector({ value, onChange, disabled }: { value: ModelConfi
     <label>模型 URL<select aria-label="模型 URL" disabled={locked || !models.length} value={value?.baseUrl || ''} onChange={e => { const config = models.find(m => m.baseUrl === e.target.value); if (config) void choose(config); }}><option value="" disabled>选择地址</option>{[...new Set(models.map(m => m.baseUrl))].map(url => <option key={url}>{url}</option>)}</select></label>
     <label>模型名称<select aria-label="模型名称" disabled={locked || !value} value={value?.id || ''} onChange={e => { const config = models.find(m => m.id === e.target.value); if (config) void choose(config); }}><option value="" disabled>选择模型</option>{models.filter(m => m.baseUrl === value?.baseUrl).map(m => <option value={m.id} key={m.id}>{m.modelName}</option>)}</select></label>
     <details><summary>管理模型配置</summary>
-      <div className="model-edit-actions"><button disabled={locked} onClick={() => { setEditId(null); setBaseUrl(''); setModelName(''); }}>新增</button><button disabled={locked || !value} onClick={() => { if (value) { setEditId(value.id); setBaseUrl(value.baseUrl); setModelName(value.modelName); } }}>编辑当前</button></div>
+      <div className="model-edit-actions"><button disabled={locked} onClick={() => { setEditId(null); setBaseUrl(''); setModelName(''); setApiKey(''); }}>新增</button><button disabled={locked || !value} onClick={() => { if (value) { setEditId(value.id); setBaseUrl(value.baseUrl); setModelName(value.modelName); setApiKey(''); } }}>编辑当前</button></div>
       <label>API 基础地址<input aria-label="配置模型 URL" disabled={locked} placeholder="http://服务器:8200/v1" value={baseUrl} onChange={e => setBaseUrl(e.target.value)}/></label>
       <label>服务模型名称<input aria-label="配置模型名称" disabled={locked} placeholder="qwen38-27b" value={modelName} onChange={e => setModelName(e.target.value)}/></label>
+      <label>API Key（仅服务器保存）<input aria-label="配置 API Key" type="password" autoComplete="new-password" disabled={locked} placeholder={editId && value?.hasApiKey ? '已配置；留空则保持不变' : '例如 sk-...'} value={apiKey} onChange={e => setApiKey(e.target.value)}/></label>
       <button disabled={locked || !baseUrl.trim() || !modelName.trim()} onClick={save}>{working ? '保存中…' : editId ? '保存修改并选用' : '保存并选用'}</button>
     </details>
     {error && <p role="alert" className="error">{error}</p>}

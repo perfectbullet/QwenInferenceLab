@@ -39,7 +39,7 @@ app.get('/api/models', async () => models.list());
 app.post('/api/models', async (req, reply) => {
   let input;
   try { input = validateModel(req.body); } catch (e) { return reply.code(400).send({ error: (e as Error).message }); }
-  try { return await models.save(input); } catch (e) {
+  try { const saved = await models.save(input); const { apiKey: _apiKey, ...publicConfig } = saved; return { ...publicConfig, hasApiKey: Boolean(saved.apiKey) }; } catch (e) {
     if ((e as {code?:number}).code === 11000) return reply.code(409).send({ error: '该 URL 和模型名称已经存在' });
     throw e;
   }
@@ -49,7 +49,7 @@ app.patch('/api/models/:id', async (req, reply) => {
   if (!await models.get(id)) return reply.code(404).send({ error: '配置不存在' });
   let input;
   try { input = validateModel(req.body); } catch (e) { return reply.code(400).send({ error: (e as Error).message }); }
-  try { return await models.save(input, id); } catch (e) {
+  try { const saved = await models.save(input, id); const { apiKey: _apiKey, ...publicConfig } = saved; return { ...publicConfig, hasApiKey: Boolean(saved.apiKey) }; } catch (e) {
     if ((e as {code?:number}).code === 11000) return reply.code(409).send({ error: '该 URL 和模型名称已经存在' });
     throw e;
   }
@@ -114,7 +114,7 @@ app.post('/api/run', async (req, reply) => {
   try {
     await infer(run, base, controller.signal, emit, async () => {
       try { await store.save(run); } catch { throw new Error('数据库检查点保存失败'); }
-    }, base === initialBase.replace(/\/+$/, '') ? process.env.MODEL_API_KEY || '' : '');
+    }, modelConfig.apiKey || (base === initialBase.replace(/\/+$/, '') ? process.env.MODEL_API_KEY || '' : ''));
     await store.save(run);
     emit({ type: 'done', run });
   } catch { emit({ type: 'error', error: '运行记录保存失败，请检查数据库连接' }); }

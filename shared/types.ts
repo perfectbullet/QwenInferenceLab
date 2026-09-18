@@ -7,7 +7,8 @@ export interface Question {
 export interface Params { temperature: number; top_p: number; top_k: number; max_tokens: number }
 export const defaults: Params = { temperature: 1, top_p: 0.95, top_k: 20, max_tokens: 8192 };
 export type RunStatus = 'running' | 'completed' | 'cancelled' | 'truncated' | 'failed' | 'interrupted';
-export interface ModelConfig { id: string; baseUrl: string; modelName: string }
+/** API keys are deliberately omitted from this client-facing shape. */
+export interface ModelConfig { id: string; baseUrl: string; modelName: string; hasApiKey?: boolean }
 export interface ModelSettings { models: ModelConfig[]; selectedId: string }
 export interface Run {
   id: string; questionId: string; question: string; startedAt: string;

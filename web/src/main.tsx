@@ -8,6 +8,7 @@ import { SourceImage } from './SourceImage';
 import { CopyButton } from './CopyButton';
 import { Reasoning } from './Reasoning';
 import './interaction.css';
+import './history.css';
 import 'katex/dist/katex.min.css';
 import './style.css';
 const labels: Record<string, string> = { running: '进行中', completed: '已完成', cancelled: '已取消', truncated: '输出被截断', failed: '失败', interrupted: '运行中断' };
@@ -130,7 +131,7 @@ function App() {
     <div className="review"><label>人工评价<select value={evaluation} onChange={e => { setEvaluation(e.target.value as Run['evaluation']); setSaved(false); }}><option value="unreviewed">未评价</option><option value="correct">正确</option><option value="incorrect">错误</option><option value="review">待复核</option></select></label><textarea placeholder="记录问题、结论或需要复核的步骤…" aria-label="评价备注" value={notes} onChange={e => { setNotes(e.target.value); setSaved(false); }}/><button onClick={saveReview}>{saved ? '已保存 ✓' : '保存评价'}</button></div></>}
     </section>
     <details className="card reference"><summary>参考答案 <span>点击展开对照 · OCR 内容需人工复核</span></summary><div className="reference-copy"><CopyButton key={q.id} label="参考答案" text={q.reference_answer}/></div><MathText text={q.reference_answer}/><SourceImage key={`${q.id}-answer`} title="参考答案原图" reference={q.reference_answer_image_path} url={q.reference_answer_image_url}/></details>
-    <section className="card"><div className="section-top"><h2>测试历史</h2><span className="muted">当前题目 · {history.length} 次</span></div>{history.length ? <div className="history">{history.map(r => <button disabled={isViewingActive || r.status === 'running'} key={r.id} onClick={() => setViewed(v => ({ ...v, [selected]: r.id }))}><span>{new Date(r.startedAt).toLocaleString('zh-CN')}</span><span>{labels[r.status]} · {seconds(r.totalMs)}</span><span>{{ unreviewed: '未评价', correct: '正确', incorrect: '错误', review: '待复核' }[r.evaluation]} ↗</span></button>)}</div> : <p className="muted">还没有测试记录。每次运行都会自动保存。</p>}</section></>}
+    <section className="card"><div className="section-top"><h2>测试历史</h2><span className="muted">当前题目 · {history.length} 次</span></div>{history.length ? <div className="history">{history.map(r => <button disabled={isViewingActive || r.status === 'running'} key={r.id} onClick={() => setViewed(v => ({ ...v, [selected]: r.id }))}><span>{new Date(r.startedAt).toLocaleString('zh-CN')}</span><span>模型：{r.modelName || r.model}</span><span>思考阶段：{seconds(r.thinkingMs)} · 生成 tokens：{String(r.usage?.completion_tokens ?? '未知')}</span><span>{labels[r.status]} · {{ unreviewed: '未评价', correct: '正确', incorrect: '错误', review: '待复核' }[r.evaluation]} ↗</span></button>)}</div> : <p className="muted">还没有测试记录。每次运行都会自动保存。</p>}</section></>}
     </main></div>;
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
