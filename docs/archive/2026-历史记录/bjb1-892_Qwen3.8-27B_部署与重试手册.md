@@ -1,4 +1,4 @@
-# bjb1-892：Qwen3.8-27B NVFP4 部署与重试手册
+# bjb1-892：Qwen3.8-27B NVFP4 部署与重试手册（归档）
 
 目标机器：`root@connect.bjb1.seetacloud.com:54492`（简称 bjb1-892）
 模型：`Inferact/Qwen3.8-27B-NVFP4`

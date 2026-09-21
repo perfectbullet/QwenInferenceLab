@@ -1,6 +1,6 @@
-# RTX PRO 6000 Blackwell vLLM 启动排障记录
+# RTX PRO 6000 Blackwell vLLM 启动排障记录（归档）
 
-日期：2026-09-18  
+日期：2026-09-18
 目标：在云服务器上启动 `Qwen3.8-27B-NVFP4` 的 vLLM OpenAI 兼容服务。
 
 ## 最终状态

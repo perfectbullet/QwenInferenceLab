@@ -1,4 +1,4 @@
-# Qwen3.8-27B：RTX PRO 6000 vLLM 中文部署说明
+# Qwen3.8-27B：RTX PRO 6000 vLLM 中文部署说明（归档）
 
 来源：[vLLM Qwen3.8-27B recipe](https://recipes.vllm.ai/Qwen/Qwen3.8-27B)
 

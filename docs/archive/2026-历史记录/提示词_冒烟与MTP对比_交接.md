@@ -1,4 +1,4 @@
-# 提示词：Qwen3.8-27B 数学评测冒烟 + MTP 对比（交给执行方）
+# 提示词：Qwen3.8-27B 数学评测冒烟 + MTP 对比（归档）
 
 > **⚠️ 2026-08-20 下午状态更新（最新，覆盖此前所有状态）**：**服务当前已停止**（GPU 让给同事使用）。恢复命令：`ssh zenking@192.168.8.231 'docker start vllm-qwen38'`，启动约 4.5 分钟（权重加载 + graph capture），**启动前必须 `nvidia-smi` 确认空闲显存 ≥30 GiB**（他人负载在跑时起不来）。服务配置为 **MTP@3 + CUDA Graph + 20K 窗口**（`--max-model-len 20480 --max-num-seqs 1`，无 enforce-eager），客户端实测 67.2 tok/s（短题）/ 131.5 tok/s（长输出稳态）。评测脚本已升级（默认采样=官方 Thinking 参数、max-tokens=4096、effort=medium、新增 TTFT/tokens/truncated/final_answer_raw 字段），直接按下方命令跑即可。`comfyui-h3` 仍处暂停，评测结束后按需 `docker start comfyui-h3`。详见 `总结_部署与提速实验_20260819.md` 实验 5-7。
 

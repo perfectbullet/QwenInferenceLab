@@ -1,4 +1,4 @@
-# MTP 与 DFlash：原理、配置差异与部署学习清单
+# MTP 与 DFlash：原理、配置差异与部署学习清单（归档）
 
 ## 1. 为什么 MTP 不写 draft 模型路径，DFlash 必须写？
 

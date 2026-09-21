@@ -1,9 +1,9 @@
-# Qwen3.8-27B 在 231 服务器（RTX 5090 32GB）部署选型指南
+# Qwen3.8-27B 在 231 服务器（RTX 5090 32GB）部署选型指南（归档）
 
-> 服务器：`192.168.8.231`  
-> GPU：NVIDIA GeForce RTX 5090 32GB  
-> CUDA：13.0  
-> PyTorch：2.13.0+cu130  
+> 服务器：`192.168.8.231`
+> GPU：NVIDIA GeForce RTX 5090 32GB
+> CUDA：13.0
+> PyTorch：2.13.0+cu130
 > 目标上下文长度：10K / 20K / 30K tokens
 
 ---
@@ -69,9 +69,9 @@ Qwen3.8-27B 估算参数：64 层、hidden size 4096、head dim 128。
 
 ### 4. AWQ-INT4 / GGUF Q4_K_M（兜底方案）
 
-- **AWQ-INT4**：`cyankiwi/Qwen3.8-27B-AWQ-INT4`  
+- **AWQ-INT4**：`cyankiwi/Qwen3.8-27B-AWQ-INT4`
   走 Transformers / AutoAWQ / vLLM，权重约 7–8GB。
-- **GGUF Q4_K_M**：`Abiray/Qwen3.8-27B-Q4_K_M-GGUF` / `ggml-org/Qwen3.8-27B-GGUF`  
+- **GGUF Q4_K_M**：`Abiray/Qwen3.8-27B-Q4_K_M-GGUF` / `ggml-org/Qwen3.8-27B-GGUF`
   走 llama.cpp / ollama，权重约 7–8GB。
 
 - **优势**：30K tokens 稳跑，显存余量充足。
