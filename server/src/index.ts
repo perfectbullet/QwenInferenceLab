@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 import { access } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import path from 'node:path';
@@ -28,15 +30,24 @@ try {
   await client.close(); throw new Error('数据库初始化失败，请检查权限并先运行 npm run db:migrate');
 }
 const app = Fastify({ logger: true });
+await app.register(swagger, {
+  openapi: {
+    info: { title: '数学测试台 API', version: '1.0.0', description: '本机数学模型测试、模型配置与运行历史接口。API Key 不会通过任何读取接口返回。' },
+    servers: [{ url: 'http://127.0.0.1:3100', description: '本机服务' }],
+    tags: [{ name: '系统' }, { name: '模型配置' }, { name: '题库' }, { name: '运行记录' }, { name: '测试' }],
+  },
+});
+await app.register(swaggerUi, { routePrefix: '/docs', uiConfig: { docExpansion: 'list', deepLinking: false } });
 let active: { run: Run; controller: AbortController } | null = null;
 app.setErrorHandler((error, request, reply) => {
   const info = error as { code?: string; statusCode?: number };
   request.log.error({ code: info.code }, '请求处理失败');
   reply.code(info.statusCode && info.statusCode < 500 ? info.statusCode : 503).send({ error: '请求失败，请检查请求格式或数据库连接' });
 });
-app.get('/api/health', async () => ({ ok: true, storage: 'mongodb', count: await questions.count(), activeRunId: active?.run.id || null }));
-app.get('/api/models', async () => models.list());
-app.post('/api/models', async (req, reply) => {
+app.get('/api/health', { schema: { tags: ['系统'], summary: '获取服务与题库状态' } }, async () => ({ ok: true, storage: 'mongodb', count: await questions.count(), activeRunId: active?.run.id || null }));
+app.get('/api/models', { schema: { tags: ['模型配置'], summary: '列出模型配置及当前选中项', description: '结果只含 hasApiKey 标识，不返回 API Key 明文。' } }, async () => models.list());
+const modelBodySchema = { type: 'object', required: ['baseUrl', 'modelName'], properties: { baseUrl: { type: 'string', format: 'uri', description: 'OpenAI 兼容 API 基础地址，例如 https://api.siliconflow.cn/v1' }, modelName: { type: 'string', description: '服务端模型名称' }, apiKey: { type: 'string', writeOnly: true, description: '可选；仅由后端保存，永不返回' } } } as const;
+app.post('/api/models', { schema: { tags: ['模型配置'], summary: '新增模型配置', body: modelBodySchema } }, async (req, reply) => {
   let input;
   try { input = validateModel(req.body); } catch (e) { return reply.code(400).send({ error: (e as Error).message }); }
   try { const saved = await models.save(input); const { apiKey: _apiKey, ...publicConfig } = saved; return { ...publicConfig, hasApiKey: Boolean(saved.apiKey) }; } catch (e) {
@@ -44,7 +55,7 @@ app.post('/api/models', async (req, reply) => {
     throw e;
   }
 });
-app.patch('/api/models/:id', async (req, reply) => {
+app.patch('/api/models/:id', { schema: { tags: ['模型配置'], summary: '编辑模型配置', params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } }, body: modelBodySchema } }, async (req, reply) => {
   const { id } = req.params as { id: string };
   if (!await models.get(id)) return reply.code(404).send({ error: '配置不存在' });
   let input;
@@ -54,13 +65,13 @@ app.patch('/api/models/:id', async (req, reply) => {
     throw e;
   }
 });
-app.post('/api/models/selection', async (req, reply) => {
+app.post('/api/models/selection', { schema: { tags: ['模型配置'], summary: '选择当前模型', body: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } } }, async (req, reply) => {
   const id = (req.body as { id?: unknown })?.id;
   if (typeof id !== 'string' || !await models.get(id)) return reply.code(400).send({ error: '请选择有效模型配置' });
   await models.select(id); return { ok: true };
 });
-app.get('/api/questions', async () => Promise.all((await questions.list()).map(q => images.decorate(q))));
-app.get('/api/questions/:id/images/:kind', async (req, reply) => {
+app.get('/api/questions', { schema: { tags: ['题库'], summary: '列出全部题目' } }, async () => Promise.all((await questions.list()).map(q => images.decorate(q))));
+app.get('/api/questions/:id/images/:kind', { schema: { tags: ['题库'], summary: '获取题目或参考答案图片', params: { type: 'object', required: ['id', 'kind'], properties: { id: { type: 'string' }, kind: { type: 'string', enum: ['question', 'answer'] } } } } }, async (req, reply) => {
   const { id, kind } = req.params as { id: string; kind: string };
   if (!['question', 'answer'].includes(kind)) return reply.code(404).send({ error: '图片不存在' });
   const q = await questions.get(id);
@@ -69,14 +80,14 @@ app.get('/api/questions/:id/images/:kind', async (req, reply) => {
   const mime: Record<string, string> = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif' };
   return reply.type(mime[path.extname(file).toLowerCase()]).header('X-Content-Type-Options', 'nosniff').header('Cache-Control', 'private, max-age=300').send(createReadStream(file));
 });
-app.get('/api/runs', async () => store.list());
-app.get('/api/active-run', async () => active?.run || null);
-app.post('/api/runs/:id/cancel', async (req, reply) => {
+app.get('/api/runs', { schema: { tags: ['运行记录'], summary: '列出全部测试历史' } }, async () => store.list());
+app.get('/api/active-run', { schema: { tags: ['运行记录'], summary: '获取当前运行任务；没有则返回 null' } }, async () => active?.run || null);
+app.post('/api/runs/:id/cancel', { schema: { tags: ['运行记录'], summary: '取消当前运行任务', params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } } }, async (req, reply) => {
   const { id } = req.params as { id: string };
   if (active?.run.id !== id) return reply.code(404).send({ error: '运行已结束或不存在' });
   active.controller.abort('cancelled'); return { ok: true };
 });
-app.patch('/api/runs/:id', async (req, reply) => {
+app.patch('/api/runs/:id', { schema: { tags: ['运行记录'], summary: '保存人工评价与备注', params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } }, body: { type: 'object', required: ['evaluation', 'notes'], properties: { evaluation: { type: 'string', enum: ['unreviewed', 'correct', 'incorrect', 'review'] }, notes: { type: 'string', maxLength: 10000 } } } } }, async (req, reply) => {
   const { id } = req.params as { id: string };
   if (active?.run.id === id) return reply.code(409).send({ error: '请在运行结束后评价' });
   const run = await store.get(id);
@@ -86,7 +97,7 @@ app.patch('/api/runs/:id', async (req, reply) => {
   const updated = await store.review(id, body.evaluation!, body.notes);
   return updated || reply.code(409).send({ error: '运行进行中，暂不能评价' });
 });
-app.post('/api/run', async (req, reply) => {
+app.post('/api/run', { schema: { tags: ['测试'], summary: '启动单题流式测试', description: '响应为 Server-Sent Events（SSE），依次产生 started、status、reasoning_delta、answer_delta、done 或 error 事件。', body: { type: 'object', required: ['questionId', 'modelConfigId'], properties: { questionId: { type: 'string' }, modelConfigId: { type: 'string' }, params: { type: 'object', properties: { temperature: { type: 'number', minimum: 0, maximum: 2 }, top_p: { type: 'number', exclusiveMinimum: 0, maximum: 1 }, top_k: { type: 'integer', minimum: 1, maximum: 100 }, max_tokens: { type: 'integer', minimum: 64, maximum: 30000 } } } } } } }, async (req, reply) => {
   if (active) return reply.code(409).send({ error: '已有运行进行中，请等待或停止' });
   const body = req.body as { questionId?: string; params?: Partial<Params>; modelConfigId?: string };
   const q = typeof body?.questionId === 'string' ? await questions.get(body.questionId) : null;

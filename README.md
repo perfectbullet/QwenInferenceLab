@@ -16,7 +16,15 @@ npm run dev
 题库、运行历史、评价存入 MongoDB；配置参见 `.env.example`。原图保留在根目录 `images/`，页面可预览；迁移前的 JSON 文件仍保留，新运行不再写入文件。
 
 - [第一版使用说明](docs/第一版使用说明.md)
+- [架构与开发者导览（面向 Python 开发者）](docs/架构与开发者导览.md)
 - [后续开发计划](docs/后续开发计划.md)
 - [前后端开发路线图](docs/前后端开发路线图.md)
+
+部署与性能文档已合并为以下四个入口；被合并的原始记录保存在 `docs/archive/2026-历史记录/`：
+
+- [Qwen3.6-35B-A3B：RTX 5090 单卡部署说明](docs/Qwen3.6-35B-A3B-Docker+Python-Frontend+Text-Only+RTX5090部署说明.md)
+- [Qwen3.8-27B 部署与运维手册](docs/Qwen3.8-27B部署与运维手册.md)
+- [推测解码与性能实验总结](docs/推测解码与性能实验总结.md)
+- [推理评测与下一阶段路线图](docs/推理评测与下一阶段路线图.md)
 
 `npm test` 测试；`npm run build` 类型检查并构建；`npm start` 提供构建后的页面和 API（3100 端口）。

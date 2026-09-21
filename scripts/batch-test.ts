@@ -5,7 +5,7 @@ import { readSSE } from '../shared/sse.js';
 
 const dir = path.resolve(process.argv[2] || 'test-results/batch-current');
 const endpoint = process.env.BATCH_API_URL || 'http://127.0.0.1:3100';
-const model = { baseUrl: 'https://u1114350-c53r-def992c7.bjb1.seetacloud.com:8443/v1', modelName: 'qwen38-27b-nvfp4' };
+type BatchModel = { baseUrl: string; modelName: string };
 const pause = () => new Promise(resolve => setTimeout(resolve, 3000));
 async function api<T>(url: string, body?: unknown): Promise<T> {
   const response = await fetch(endpoint + url, { signal: AbortSignal.timeout(30000), ...(body === undefined ? {} : {
@@ -14,7 +14,7 @@ async function api<T>(url: string, body?: unknown): Promise<T> {
   if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
   return response.json();
 }
-type State = { model: typeof model; params: typeof defaults; questionIds: string[]; modelConfigId: string;
+type State = { model: BatchModel; params: typeof defaults; questionIds: string[]; modelConfigId: string;
   startedAt: string; status: string; pending?: { questionId: string; since: string; runId?: string };
   results: { questionId: string; runId: string; status: string; totalMs: number }[]; error?: string };
 await mkdir(dir, { recursive: true });
@@ -32,8 +32,9 @@ try {
   catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
   if (!state) {
     const settings = await api<ModelSettings>('/api/models');
-    const selected = settings.models.find(m => m.baseUrl === model.baseUrl && m.modelName === model.modelName)
-      || await api<{ id: string }>('/api/models', model);
+    const selected = settings.models.find(m => m.id === settings.selectedId);
+    if (!selected) throw new Error('未找到当前选中的模型配置；请先在页面选择模型');
+    const model: BatchModel = { baseUrl: selected.baseUrl, modelName: selected.modelName };
     const questions = await api<Question[]>('/api/questions');
     if (!questions.length) throw new Error('题库为空');
     state = { model, params: { ...defaults }, modelConfigId: selected.id, questionIds: questions.map(q => q.id), startedAt: new Date().toISOString(), status: 'running', results: [] };

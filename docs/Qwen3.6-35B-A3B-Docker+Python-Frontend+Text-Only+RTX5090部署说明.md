@@ -70,6 +70,33 @@ docker run --rm -d -it \
   --speculative-config '{"method":"mtp","num_speculative_tokens":4,"moe_backend":"flashinfer_cutlass"}'
 ```
 
+
+如果是 Unsloth NVFP4 
+```bash
+docker run --rm -it \
+  --name qwen36-35b-a3b \
+  --gpus '"device=0"' \
+  --ipc=host \
+  -p 8200:8000 \
+  -v /data/metahuman_work/models/unsloth/Qwen3.6-35B-A3B-NVFP4:/models/qwen36:ro \
+  -e VLLM_USE_RUST_FRONTEND=0 \
+  vllm/vllm-openai:v0.28.0 \
+  /models/qwen36 \
+  --served-model-name unsloth/Qwen3.6-35B-A3B-NVFP4 \
+  --trust-remote-code \
+  --tensor-parallel-size 1 \
+  --kv-cache-dtype fp8 \
+  --gpu-memory-utilization 0.85 \
+  --max-model-len 65536 \
+  --max-num-seqs 8 \
+  --max-num-batched-tokens 8192 \
+  --enable-chunked-prefill \
+  --enable-prefix-caching \
+  --async-scheduling \
+  --language-model-only \
+  --reasoning-parser qwen3
+```
+
 关键点：
 
 - `--language-model-only` 不加载视觉部分，把显存留给 KV Cache、MTP 和运行时。
