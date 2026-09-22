@@ -37,6 +37,7 @@ ss -ltnp | grep ':8200' || true
 
 ## 3. 231 上已验证的启动命令
 
+如果是nvidia
 ```bash
 docker run --rm -d -it \
   --name qwen36-35b-a3b \
@@ -71,7 +72,44 @@ docker run --rm -d -it \
 ```
 
 
-如果是 Unsloth NVFP4 
+关键点：
+
+- `--language-model-only` 不加载视觉部分，把显存留给 KV Cache、MTP 和运行时。
+- `--max-model-len 20480` 是当前实测配置，不要因为模型原生支持更长上下文而直接改成 262K。
+- `--max-num-seqs 2` 面向低并发场景；修改并发后必须重新测显存和吞吐。
+- NVIDIA checkpoint 使用 `modelopt_fp4`、Marlin 和 FlashInfer；这些参数不要直接套到其他发布者的 NVFP4 权重。
+- `--rm` 表示容器停止后自动删除；启动命令应保留在文档或脚本中。
+
+
+
+### 如果是 Unsloth NVFP4 
+```bash
+docker run --rm -it -d\
+  --name qwen36-35b-a3b \
+  --gpus '"device=0"' \
+  --ipc=host \
+  -p 8200:8000 \
+  -v /data/metahuman_work/models/unsloth/Qwen3.6-35B-A3B-NVFP4:/models/qwen36:ro \
+  -e VLLM_USE_RUST_FRONTEND=0 \
+  vllm/vllm-openai:v0.28.0 \
+  /models/qwen36 \
+  --served-model-name unsloth/Qwen3.6-35B-A3B-NVFP4 \
+  --trust-remote-code \
+  --tensor-parallel-size 1 \
+  --kv-cache-dtype fp8 \
+  --gpu-memory-utilization 0.85 \
+  --max-model-len 31764 \
+  --max-num-seqs 4 \
+  --max-num-batched-tokens 8192 \
+  --enable-chunked-prefill \
+  --enable-prefix-caching \
+  --async-scheduling \
+  --language-model-only \
+  --reasoning-parser qwen3 \
+  --speculative-config '{"method":"mtp","num_speculative_tokens":2}'
+```
+
+#### RTX 5090 + Docker + Unsloth Qwen3.6-35B-A3B-NVFP4 社区实测
 ```bash
 docker run --rm -it \
   --name qwen36-35b-a3b \
@@ -87,23 +125,17 @@ docker run --rm -it \
   --tensor-parallel-size 1 \
   --kv-cache-dtype fp8 \
   --gpu-memory-utilization 0.85 \
-  --max-model-len 65536 \
-  --max-num-seqs 8 \
+  --max-model-len 31764 \
+  --max-num-seqs 4 \
   --max-num-batched-tokens 8192 \
   --enable-chunked-prefill \
   --enable-prefix-caching \
   --async-scheduling \
   --language-model-only \
-  --reasoning-parser qwen3
-```
+  --reasoning-parser qwen3 \
+  --speculative-config '{"method":"mtp","num_speculative_tokens":2}'
+  ```
 
-关键点：
-
-- `--language-model-only` 不加载视觉部分，把显存留给 KV Cache、MTP 和运行时。
-- `--max-model-len 20480` 是当前实测配置，不要因为模型原生支持更长上下文而直接改成 262K。
-- `--max-num-seqs 2` 面向低并发场景；修改并发后必须重新测显存和吞吐。
-- NVIDIA checkpoint 使用 `modelopt_fp4`、Marlin 和 FlashInfer；这些参数不要直接套到其他发布者的 NVFP4 权重。
-- `--rm` 表示容器停止后自动删除；启动命令应保留在文档或脚本中。
 
 ## 4. 健康检查与调用
 

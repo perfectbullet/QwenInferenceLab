@@ -70,6 +70,43 @@ docker run --rm -d --name qwen36-ab-a --gpus '"device=0"' --ipc=host -p 8200:800
 --speculative-config '{"method":"mtp","num_speculative_tokens":4,"moe_backend":"flashinfer_cutlass"}'
 ```
 
+**E 
+```bash
+docker stop qwen36-ab-a >/dev/null 2>&1 || true
+
+docker run --rm -d \
+  --name qwen36-ab-a \
+  --gpus '"device=0"' \
+  --ipc=host \
+  -p 8200:8000 \
+  -v /data/metahuman_work/models/nvidia/Qwen3.6-35B-A3B-NVFP4:/models/qwen36:ro \
+  -e VLLM_USE_RUST_FRONTEND=0 \
+  -e VLLM_HAS_FLASHINFER_CUBIN=1 \
+  vllm/vllm-openai:v0.28.0 \
+  /models/qwen36 \
+  --served-model-name nvidia/Qwen3.6-35B-A3B-NVFP4 \
+  --trust-remote-code \
+  --tensor-parallel-size 1 \
+  --quantization modelopt_fp4 \
+  --kv-cache-dtype fp8 \
+  --block-size 128 \
+  --moe-backend marlin \
+  --attention-backend FLASH_ATTN \
+  --gpu-memory-utilization 0.85 \
+  --max-model-len 20480 \
+  --max-num-seqs 2 \
+  --max-num-batched-tokens 8192 \
+  --enable-chunked-prefill \
+  --enable-prefix-caching \
+  --async-scheduling \
+  --skip-mm-profiling \
+  --language-model-only \
+  --reasoning-parser qwen3
+```
+
+
+
+
 本地通过 SSH 触发 231 服务时，四组对应的可执行命令如下；脚本会自动停止 A/B/C/D 的旧容器，避免 `8200` 端口冲突：
 
 ```bash
