@@ -61,7 +61,7 @@ docker run --gpus all --rm \
 ### 3.2 带工具调用的版本
 
 ```bash
-docker run -d --gpus all --name vllm-qwen38 --rm \
+docker run --gpus all --name vllm-qwen38 --rm \
   -v /data/metahuman_work/models/Inferact/Qwen3.8-27B-NVFP4:/model:ro \
   -p 8200:8000 \
   vllm/vllm-openai:qwen38 \

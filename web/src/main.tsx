@@ -12,6 +12,7 @@ import './history.css';
 import 'katex/dist/katex.min.css';
 import './style.css';
 const labels: Record<string, string> = { running: '进行中', completed: '已完成', cancelled: '已取消', truncated: '输出被截断', failed: '失败', interrupted: '运行中断' };
+const parameterStep: Partial<Record<keyof Params, number>> = { temperature: 0.05, top_p: 0.05, min_p: 0.05, presence_penalty: 0.1, repetition_penalty: 0.05 };
 const seconds = (n: number | null) => n === null ? '未知' : `${(n / 1000).toFixed(1)} 秒`;
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const r = await fetch(url, init); const body = await r.json();
@@ -119,7 +120,7 @@ function App() {
     {error && <div role="alert" className="error">{error}</div>}
     {hasActive && !isViewingActive && <div className="notice">{activeQuestion} 正在解答，可继续浏览其他题目。<button onClick={() => activeQuestion && setSelected(activeQuestion)}>返回正在解答的题目</button></div>}
     {q && <><section className="card"><div className="section-top"><h2>{q.id} <span className="badge">{q.tag} · {q.difficulty}</span></h2><CopyButton key={q.id} label="题目" text={q.question}/></div><MathText text={q.question}/><SourceImage key={`${q.id}-question`} title="题目原图" reference={q.image_path} url={q.image_url}/>
-    <details className="settings"><summary>生成参数 <span>思考模式固定开启</span></summary><div className="parameter-grid">{(Object.keys(defaults) as (keyof Params)[]).map(key => <label key={key}>{key}<input type="number" disabled={busy} step={key === 'temperature' || key === 'top_p' ? '0.05' : '1'} value={params[key]} onChange={e => setParams(p => ({ ...p, [key]: Number(e.target.value) }))}/></label>)}</div><small>输出预算包含思考与正文；输入 + 输出不能超过模型 32768 token 上限。</small></details>
+    <details className="settings"><summary>生成参数 <span>思考模式固定开启</span></summary><div className="parameter-grid">{(Object.keys(defaults) as (keyof Params)[]).map(key => <label key={key}>{key}<input type="number" disabled={busy} step={parameterStep[key] || 1} value={params[key]} onChange={e => setParams(p => ({ ...p, [key]: Number(e.target.value) }))}/></label>)}</div><small>输出预算包含思考与正文；输入 + 输出不能超过模型 32768 token 上限。</small></details>
     <div className="actions"><button className="primary" disabled={hasActive || !selectedModel} onClick={run}>{isViewingActive ? '正在解答…' : '开始测试 →'}</button><button disabled={!isViewingActive || !activeRun} onClick={() => activeRun && cancel(activeRun.id)}>停止生成</button><span className="muted">每次独立解题 · 不发送参考答案</span></div></section>
     <section className="card answer"><div className="section-top"><h2>模型解答</h2><CopyButton key={current?.id || q.id} label="模型解答" text={current?.answer || ''}/>{current && <span className={`badge ${current.status === 'completed' ? 'success' : ''}`}>{labels[current.status]}</span>}</div>
     {current && <p className="run-model">本次模型：{current.modelName || current.model} · URL：{current.modelBaseUrl || '旧记录未保存'}</p>}

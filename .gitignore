@@ -6,3 +6,6 @@ test-results/
 .git-local/
 images/*
 data/archive/math_qa_275_20260617.mineru.filled_reference_answer-v2.jsonl
+*.pyc
+reports/mongodb-question-statistics.json
+reports/mongodb-run-statistics.json

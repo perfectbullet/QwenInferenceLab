@@ -9,6 +9,7 @@
     "check": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "db:migrate": "tsx server/src/migrate.ts",
+    "db:analyze": "tsx scripts/analyze-mongodb.ts",
     "test:mongodb": "MONGODB_INTEGRATION=1 tsx --test tests/mongodb.test.ts"
   },
   "dependencies": {
