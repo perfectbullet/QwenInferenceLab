@@ -94,6 +94,7 @@ async function resolveModel(): Promise<string> {
 }
 
 const model = await resolveModel();
+console.log(`${model}`)
 
 async function infer(prompt: string, outputTokenBudget = params.max_tokens): Promise<InferenceResult> {
   const started = performance.now();
@@ -174,6 +175,7 @@ try {
       ...result, boxedAnswer, boxedCompliant: boxedAnswer !== null,
       answerMatchHeuristic: Boolean(normalizedBoxed && normalizedExpected && (normalizedBoxed === normalizedExpected || normalizedBoxed.includes(normalizedExpected) || normalizedExpected.includes(normalizedBoxed))),
     });
+    
     console.log(`${variant} ${question.id}: ${result.finishReason} ${result.totalMs}ms ${result.decodeTokensPerSecond ?? '-'} tok/s boxed=${boxedAnswer !== null}`);
   }
 
