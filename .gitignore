@@ -13,3 +13,4 @@ __pycache__/
 reports/mongodb-question-statistics.json
 reports/mongodb-run-statistics.json
 qwen-evaluator/evaluation-audit-manifest.json
+qwen-evaluator/artifacts/
