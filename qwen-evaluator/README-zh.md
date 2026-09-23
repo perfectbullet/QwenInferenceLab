@@ -73,9 +73,34 @@ python -m qwen_inference_lab.evaluator.cli report \
 
 报告会列出每个 Batch 和 All Batches 的 Runtime、评测层级、方法、数学 verdict 与 reasonCode。已知三个目标批次还会保留命令记录中的 concurrency 元数据（4/8/8）。
 
+
+## Capability Dataset Builder V1
+
+从三个明确的 Batch 构建 250 条题目级能力记录：
+
+```bash
+python -m qwen_inference_lab.capability.cli build \
+  --batch-state ../test-results/batch-20260922-nvidia-Qwen3.6-35B-A3B-NVFP4/state.json \
+  --batch-state ../test-results/batch-20260922-nvidia-Qwen3.6-35B-A3B-NVFP4-round2/state.json \
+  --batch-state ../test-results/batch-20260922-nvidia-Qwen3.6-35B-A3B-NVFP4-round3/state.json
+```
+
+默认已存在的 `capability-v1` 记录会跳过；添加 `--force` 可幂等更新。构建同时写入 MongoDB `question_capabilities`，并生成：
+
+- `artifacts/capability-dataset-v1.jsonl`
+- `artifacts/capability-dataset-v1.csv`
+
+查看已持久化数据的统计：
+
+```bash
+python -m qwen_inference_lab.capability.cli report
+```
+
+Dataset 保留 Question 文本和每次 Attempt 的结构化指标，不包含 `reference_answer`、完整模型 answer 或 reasoning。
+
 ## 安全与持久化
 
-所有写操作前都会 ping MongoDB，并核验数据库名、Questions 数量和 Runs 数量。评测器只写 `question_gold_profiles` 与 `evaluations`，不修改原始 Questions 或 Runs 的 answer/reasoning。API Key 只在内存中使用，不会写入证据。
+所有写操作前都会 ping MongoDB，并核验数据库名、Questions 数量和 Runs 数量。工具只写 `question_gold_profiles`、`evaluations` 与 `question_capabilities`，不修改原始 Questions 或 Runs 的 answer/reasoning。API Key 只在内存中使用，不会写入证据。
 
 ## 测试
 

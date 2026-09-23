@@ -38,9 +38,34 @@ python -m qwen_inference_lab.evaluator.cli report \
 
 The manifest deliberately leaves `humanVerdict` and `humanNotes` empty. Reviewers fill them manually.
 
+
+## Capability Dataset Builder V1
+
+Build 250 question-level capability records from the three exact batches:
+
+```bash
+python -m qwen_inference_lab.capability.cli build \
+  --batch-state ../test-results/batch-20260922-nvidia-Qwen3.6-35B-A3B-NVFP4/state.json \
+  --batch-state ../test-results/batch-20260922-nvidia-Qwen3.6-35B-A3B-NVFP4-round2/state.json \
+  --batch-state ../test-results/batch-20260922-nvidia-Qwen3.6-35B-A3B-NVFP4-round3/state.json
+```
+
+Existing `capability-v1` records are skipped by default; pass `--force` for an idempotent update. The command writes MongoDB `question_capabilities` and exports:
+
+- `artifacts/capability-dataset-v1.jsonl`
+- `artifacts/capability-dataset-v1.csv`
+
+Report persisted records with:
+
+```bash
+python -m qwen_inference_lab.capability.cli report
+```
+
+The dataset retains Question text and structured attempt metrics, but excludes `reference_answer`, full model answers, and reasoning.
+
 ## Safety and persistence
 
-Every command validates MongoDB with ping/database name/question count/run count before writes. Evaluator data is stored only in `question_gold_profiles` and `evaluations`; original Questions and Run answers/reasoning are not modified. API keys remain in memory and are never persisted in evidence.
+Every command validates MongoDB with ping/database name/question count/run count before writes. Tool data is stored only in `question_gold_profiles`, `evaluations`, and `question_capabilities`; original Questions and Run answers/reasoning are not modified. API keys remain in memory and are never persisted in evidence.
 
 ## Tests
 
