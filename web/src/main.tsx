@@ -7,6 +7,7 @@ import { MathText } from './MathText';
 import { SourceImage } from './SourceImage';
 import { CopyButton } from './CopyButton';
 import { Reasoning } from './Reasoning';
+import { EvaluationsPage } from './EvaluationsPage';
 import './interaction.css';
 import './history.css';
 import 'katex/dist/katex.min.css';
@@ -18,7 +19,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const r = await fetch(url, init); const body = await r.json();
   if (!r.ok) throw new Error(body.error || `HTTP ${r.status}`); return body;
 }
-function App() {
+function LabApp({ onEvaluations }: { onEvaluations: () => void }) {
   const [questions, setQuestions] = useState<Question[]>([]); const [runs, setRuns] = useState<Run[]>([]);
   const [selected, setSelected] = useState(''); const [search, setSearch] = useState('');
   const [tag, setTag] = useState(''); const [difficulty, setDifficulty] = useState('');
@@ -110,6 +111,7 @@ function App() {
   }
   return <div className="app">
     <aside><div className="brand"><span className="logo">∑</span><div><strong>数学测试台</strong><small>QWEN · CoT LAB</small></div></div>
+      <button className="evaluation-nav" onClick={onEvaluations}>机器评测结果 <span>查看</span></button>
       <ModelSelector value={selectedModel} onChange={setSelectedModel} disabled={hasActive}/>
       <div className="library-title">题库 <span>{questions.length} 题</span></div>
       <input aria-label="搜索题目" placeholder="搜索题号或题目…" value={search} onChange={e => setSearch(e.target.value)}/>
@@ -135,4 +137,8 @@ function App() {
     <section className="card"><div className="section-top"><h2>测试历史</h2><span className="muted">当前题目 · {history.length} 次</span></div>{history.length ? <div className="history">{history.map(r => <button disabled={isViewingActive || r.status === 'running'} key={r.id} onClick={() => setViewed(v => ({ ...v, [selected]: r.id }))}><span>{new Date(r.startedAt).toLocaleString('zh-CN')}</span><span>模型：{r.modelName || r.model}</span><span>思考阶段：{seconds(r.thinkingMs)} · 生成 tokens：{String(r.usage?.completion_tokens ?? '未知')}</span><span>{labels[r.status]} · {{ unreviewed: '未评价', correct: '正确', incorrect: '错误', review: '待复核' }[r.evaluation]} ↗</span></button>)}</div> : <p className="muted">还没有测试记录。每次运行都会自动保存。</p>}</section></>}
     </main></div>;
 }
-createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
+function App() {
+  const [view, setView] = useState<"lab" | "evaluations">("lab");
+  return view === "evaluations" ? <EvaluationsPage onBack={() => setView("lab")}/> : <LabApp onEvaluations={() => setView("evaluations")}/>;
+}
+createRoot(document.getElementById("root")!).render(<React.StrictMode><App/></React.StrictMode>);
