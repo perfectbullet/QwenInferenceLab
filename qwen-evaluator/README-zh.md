@@ -98,9 +98,40 @@ python -m qwen_inference_lab.capability.cli report
 
 Dataset 保留 Question 文本和每次 Attempt 的结构化指标，不包含 `reference_answer`、完整模型 answer 或 reasoning。
 
+## Embedding Dataset Builder + Retrieval Evaluation V1
+
+为 250 条 `capability-v1` Question 构建或更新 BGE-M3 embedding：
+
+```bash
+python -m qwen_inference_lab.embedding.cli build
+```
+
+默认服务为 `http://192.168.100.233:8092/v1`，模型为 `BAAI/bge-m3`。可通过 `--base-url`、`--model`、`--timeout`、`--retries` 和 `--batch-size` 覆盖请求配置；添加 `--force` 可强制重新生成未变化的记录。Embedding 输入仅使用 Question 文本。
+
+执行单题余弦相似度检索，或执行完整的 Leave-One-Out 评估：
+
+```bash
+python -m qwen_inference_lab.embedding.cli retrieve \
+  --question-id MATH-001 \
+  --top-k 10
+
+python -m qwen_inference_lab.embedding.cli evaluate
+python -m qwen_inference_lab.embedding.cli report
+```
+
+`evaluate` 会排除 Query 自身，并使用 NumPy 在内存中评估 Top-5/Top-10 邻域。`labelUsable=false` 的题目仍可作为检索结果展示，但不会参与 Local Success Mean 聚合。
+
+Embedding 记录保存到 MongoDB `question_embeddings`，唯一键为 `(questionId, embeddingVersion)`。生成文件：
+
+- `artifacts/embedding-dataset-bge-m3-v1.jsonl`（metadata 和完整 vector）
+- `artifacts/embedding-dataset-bge-m3-v1.csv`（仅 metadata）
+- `artifacts/retrieval-evaluation-bge-m3-v1.json`
+- `artifacts/retrieval-neighborhoods-bge-m3-v1.jsonl`
+- `artifacts/non-perfect-retrieval-v1.jsonl`
+
 ## 安全与持久化
 
-所有写操作前都会 ping MongoDB，并核验数据库名、Questions 数量和 Runs 数量。工具只写 `question_gold_profiles`、`evaluations` 与 `question_capabilities`，不修改原始 Questions 或 Runs 的 answer/reasoning。API Key 只在内存中使用，不会写入证据。
+所有写操作前都会 ping MongoDB，并核验数据库名、Questions 数量和 Runs 数量。工具只写 `question_gold_profiles`、`evaluations`、`question_capabilities` 与 `question_embeddings`，不修改原始 Questions 或 Runs 的 answer/reasoning。API Key 只在内存中使用，不会写入证据。
 
 ## 测试
 

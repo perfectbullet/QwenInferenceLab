@@ -63,9 +63,40 @@ python -m qwen_inference_lab.capability.cli report
 
 The dataset retains Question text and structured attempt metrics, but excludes `reference_answer`, full model answers, and reasoning.
 
+## Embedding Dataset Builder + Retrieval Evaluation V1
+
+Build or refresh BGE-M3 embeddings for the 250 `capability-v1` questions:
+
+```bash
+python -m qwen_inference_lab.embedding.cli build
+```
+
+The default service is `http://192.168.100.233:8092/v1` with model `BAAI/bge-m3`. Use `--base-url`, `--model`, `--timeout`, `--retries`, and `--batch-size` to override request settings; use `--force` to regenerate unchanged records. The embedding input is the Question text only.
+
+Run a cosine-similarity lookup or the full leave-one-out evaluation:
+
+```bash
+python -m qwen_inference_lab.embedding.cli retrieve \
+  --question-id MATH-001 \
+  --top-k 10
+
+python -m qwen_inference_lab.embedding.cli evaluate
+python -m qwen_inference_lab.embedding.cli report
+```
+
+`evaluate` excludes the query itself and evaluates Top-5/Top-10 neighborhoods in memory with NumPy. Neighbors whose `labelUsable` is false remain visible in retrieval output but are excluded from local-success means.
+
+Embedding records are stored in MongoDB `question_embeddings`, uniquely keyed by `(questionId, embeddingVersion)`. Generated files are:
+
+- `artifacts/embedding-dataset-bge-m3-v1.jsonl` (metadata and vectors)
+- `artifacts/embedding-dataset-bge-m3-v1.csv` (metadata only)
+- `artifacts/retrieval-evaluation-bge-m3-v1.json`
+- `artifacts/retrieval-neighborhoods-bge-m3-v1.jsonl`
+- `artifacts/non-perfect-retrieval-v1.jsonl`
+
 ## Safety and persistence
 
-Every command validates MongoDB with ping/database name/question count/run count before writes. Tool data is stored only in `question_gold_profiles`, `evaluations`, and `question_capabilities`; original Questions and Run answers/reasoning are not modified. API keys remain in memory and are never persisted in evidence.
+Every command validates MongoDB with ping/database name/question count/run count before writes. Tool data is stored only in `question_gold_profiles`, `evaluations`, `question_capabilities`, and `question_embeddings`; original Questions and Run answers/reasoning are not modified. API keys remain in memory and are never persisted in evidence.
 
 ## Tests
 
