@@ -14,11 +14,13 @@ import { connectDatabase } from './database.js';
 import { QuestionImages } from './images.js';
 import { ModelStore, validateModel } from './models.js';
 import { runStream } from './run-stream.js';
+import { EvaluationStore, type EvaluationQuery } from './evaluations.js';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const { client, db } = await connectDatabase();
 const store = new RunStore(db);
 const questions = new QuestionStore(db);
 const models = new ModelStore(db);
+const evaluations = new EvaluationStore(db);
 const initialBase = process.env.MODEL_BASE_URL || 'http://192.168.8.231:8200/v1';
 const initialModel = process.env.MODEL_NAME || 'qwen38-27b';
 const images = new QuestionImages(path.resolve(root, process.env.IMAGES_DIR || 'images'));
@@ -83,6 +85,7 @@ app.get('/api/questions/:id/images/:kind', { schema: { tags: ['题库'], summary
   return reply.type(mime[path.extname(file).toLowerCase()]).header('X-Content-Type-Options', 'nosniff').header('Cache-Control', 'private, max-age=300').send(createReadStream(file));
 });
 app.get('/api/runs', { schema: { tags: ['运行记录'], summary: '列出全部测试历史' } }, async () => store.list());
+app.get('/api/evaluations', { schema: { tags: ['运行记录'], summary: '分页查询机器评测结果', querystring: { type: 'object', properties: { page: { type: 'integer', minimum: 1 }, limit: { type: 'integer', minimum: 1, maximum: 100 }, verdict: { type: 'string', enum: ['correct', 'incorrect', 'review', 'unresolved'] }, level: { type: 'integer', minimum: 0, maximum: 3 }, method: { type: 'string' }, questionId: { type: 'string' }, runId: { type: 'string' } } } } }, async req => evaluations.list(req.query as EvaluationQuery));
 app.get('/api/active-run', { schema: { tags: ['运行记录'], summary: '获取一个当前运行任务；没有则返回 null' } }, async () => active.values().next().value?.run || null);
 app.post('/api/runs/:id/cancel', { schema: { tags: ['运行记录'], summary: '取消当前运行任务', params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } } }, async (req, reply) => {
   const { id } = req.params as { id: string };

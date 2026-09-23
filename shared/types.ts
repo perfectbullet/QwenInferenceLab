@@ -27,3 +27,26 @@ export interface Run {
   thinkingNote: string; usage: Record<string, unknown> | null;
   evaluation: 'unreviewed' | 'correct' | 'incorrect' | 'review'; notes: string;
 }
+
+
+export type MathVerdict = "correct" | "incorrect" | "review" | "unresolved";
+export interface MachineEvaluation {
+  id: string; runId: string; questionId: string; pipelineVersion: string;
+  goldAdapterVersion: string; mathVerifyVersion: string;
+  runtime: { status: RunStatus; finishReason?: string | null; error?: string | null };
+  math: { verdict: MathVerdict; level: number; method: string; confidence: number; reasonCode: string };
+  extraction?: Record<string, unknown> | null;
+  verifyConfig?: Record<string, unknown> | null;
+  judge?: Record<string, unknown> | null;
+  createdAt?: string; updatedAt?: string;
+}
+export interface EvaluationSummary {
+  total: number;
+  verdicts: Record<string, number>;
+  levels: Record<string, number>;
+  methods: Record<string, number>;
+}
+export interface EvaluationListResponse {
+  items: MachineEvaluation[]; total: number; page: number; limit: number;
+  summary: EvaluationSummary;
+}
