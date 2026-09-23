@@ -7,5 +7,9 @@ test-results/
 images/*
 data/archive/math_qa_275_20260617.mineru.filled_reference_answer-v2.jsonl
 *.pyc
+.pytest_cache/
+__pycache__/
+*.egg-info/
 reports/mongodb-question-statistics.json
 reports/mongodb-run-statistics.json
+qwen-evaluator/evaluation-audit-manifest.json
