@@ -39,4 +39,4 @@ def build_gold_profile(question: dict[str, object]) -> GoldProfile:
     serialized = [str(item) for item in parsed]
     if len(parsed) != 1:
         return GoldProfile(**base, question_type="ambiguous", evaluation_route=EvaluationRoute.UNRESOLVED, status=GoldStatus.AMBIGUOUS, parse={"success": bool(parsed), "serialized": serialized}, reason_code="NON_SINGLE_GOLD_EXTRACTION")
-    return GoldProfile(**base, question_type="single_expression", evaluation_route=EvaluationRoute.MATH_VERIFY, status=GoldStatus.RESOLVED, gold_candidates=serialized, parse={"success": True, "serialized": serialized}, reason_code="DIRECT_MATH_GOLD")
+    return GoldProfile(**base, question_type="single_expression", evaluation_route=EvaluationRoute.LLM_SEMANTIC, status=GoldStatus.RESOLVED, gold_candidates=serialized, parse={"success": True, "serialized": serialized}, reason_code="SINGLE_EXPRESSION_LLM_SEMANTIC")
