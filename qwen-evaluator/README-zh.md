@@ -100,13 +100,13 @@ Dataset 保留 Question 文本和每次 Attempt 的结构化指标，不包含 `
 
 ## Embedding Dataset Builder + Retrieval Evaluation V1
 
-为 250 条 `capability-v1` Question 构建或更新 BGE-M3 embedding：
+为 250 条 `capability-v1` Question 构建或更新 Qwen3-Embedding-0.6B embedding：
 
 ```bash
 python -m qwen_inference_lab.embedding.cli build
 ```
 
-默认服务为 `http://192.168.100.233:8092/v1`，模型为 `BAAI/bge-m3`。可通过 `--base-url`、`--model`、`--timeout`、`--retries` 和 `--batch-size` 覆盖请求配置；添加 `--force` 可强制重新生成未变化的记录。Embedding 输入仅使用 Question 文本。
+默认服务为 `http://192.168.100.233:8093/v1`，模型为 `Qwen/Qwen3-Embedding-0.6B`，Embedding 版本为 `qwen3-embedding-0.6b-v1`。可通过 `--base-url`、`--model`、`--timeout`、`--retries` 和 `--batch-size` 覆盖请求配置；添加 `--force` 可强制重新生成未变化的记录。Embedding 输入仅使用 Question 文本。
 
 执行单题余弦相似度检索，或执行完整的 Leave-One-Out 评估：
 
@@ -123,11 +123,11 @@ python -m qwen_inference_lab.embedding.cli report
 
 Embedding 记录保存到 MongoDB `question_embeddings`，唯一键为 `(questionId, embeddingVersion)`。生成文件：
 
-- `artifacts/embedding-dataset-bge-m3-v1.jsonl`（metadata 和完整 vector）
-- `artifacts/embedding-dataset-bge-m3-v1.csv`（仅 metadata）
-- `artifacts/retrieval-evaluation-bge-m3-v1.json`
-- `artifacts/retrieval-neighborhoods-bge-m3-v1.jsonl`
-- `artifacts/non-perfect-retrieval-v1.jsonl`
+- `artifacts/embedding-dataset-qwen3-embedding-0.6b-v1.jsonl`（metadata 和完整 vector）
+- `artifacts/embedding-dataset-qwen3-embedding-0.6b-v1.csv`（仅 metadata）
+- `artifacts/retrieval-evaluation-qwen3-embedding-0.6b-v1.json`
+- `artifacts/retrieval-neighborhoods-qwen3-embedding-0.6b-v1.jsonl`
+- `artifacts/non-perfect-retrieval-qwen3-embedding-0.6b-v1.jsonl`
 
 ## Router V1 — KNN + OOD 离线评估
 

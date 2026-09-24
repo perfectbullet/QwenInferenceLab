@@ -24,7 +24,7 @@ class Database:
 
 def record(text_hash="hash"):
     return EmbeddingRecord(
-        questionId="Q1", embeddingVersion="bge-m3-v1", model="BAAI/bge-m3",
+        questionId="Q1", embeddingVersion="qwen3-embedding-0.6b-v1", model="Qwen/Qwen3-Embedding-0.6B",
         baseUrl="http://embedding.test/v1", dimension=2, textHash=text_hash,
         question="question", tag="tag", mathType="algebra", difficulty="medium",
         capabilityVersion="capability-v1", localSuccessRate=1.0, mathPassRate=1.0,

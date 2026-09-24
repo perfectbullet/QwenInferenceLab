@@ -1,0 +1,59 @@
+name: qwen3-embedding
+
+services:
+  qwen3-embedding-0.6b:
+    image: docker.m.daocloud.io/vllm/vllm-openai:v0.11.0
+    pull_policy: never
+    container_name: qwen3-embedding-0.6b
+    restart: unless-stopped
+
+    ports:
+      - "8093:8093"
+
+    volumes:
+      - /data/metahuman_work/models/Qwen/Qwen3-Embedding-0.6B:/model/Qwen3-Embedding-0.6B:ro
+
+    environment:
+      NVIDIA_VISIBLE_DEVICES: "0"
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
+
+    shm_size: "4gb"
+
+    command:
+      - --model
+      - /model/Qwen3-Embedding-0.6B
+      - --task
+      - embed
+      - --served-model-name
+      - Qwen/Qwen3-Embedding-0.6B
+      - --max-model-len
+      - "8192"
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8093"
+      - --dtype
+      - float16
+      - --gpu-memory-utilization
+      - "0.20"
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8093/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 180s
+      retries: 3
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"

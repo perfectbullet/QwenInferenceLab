@@ -20,7 +20,7 @@ from .report import (
 from .repository import EmbeddingRepository
 from .retrieval import evaluate_leave_one_out, retrieve_one
 
-app = typer.Typer(help="Build BGE-M3 embeddings and evaluate in-memory cosine retrieval.")
+app = typer.Typer(help="Build Qwen3 embeddings and evaluate in-memory cosine retrieval.")
 
 
 def open_repository():
@@ -37,8 +37,8 @@ def build(
     retries: int = typer.Option(2, "--retries", min=0, max=10),
     batch_size: int = typer.Option(32, "--batch-size", min=1, max=250),
     force: bool = typer.Option(False, "--force"),
-    jsonl_output: Path = typer.Option(Path("artifacts/embedding-dataset-bge-m3-v1.jsonl"), "--jsonl-output"),
-    csv_output: Path = typer.Option(Path("artifacts/embedding-dataset-bge-m3-v1.csv"), "--csv-output"),
+    jsonl_output: Path = typer.Option(Path("artifacts/embedding-dataset-qwen3-embedding-0.6b-v1.jsonl"), "--jsonl-output"),
+    csv_output: Path = typer.Option(Path("artifacts/embedding-dataset-qwen3-embedding-0.6b-v1.csv"), "--csv-output"),
 ) -> None:
     """Generate or reuse 250 embeddings and persist/export the dataset."""
     mongo_client, repository, validation = open_repository()
@@ -111,9 +111,9 @@ def retrieve(
 
 @app.command("evaluate")
 def evaluate(
-    summary_output: Path = typer.Option(Path("artifacts/retrieval-evaluation-bge-m3-v1.json"), "--summary-output"),
-    neighborhoods_output: Path = typer.Option(Path("artifacts/retrieval-neighborhoods-bge-m3-v1.jsonl"), "--neighborhoods-output"),
-    non_perfect_output: Path = typer.Option(Path("artifacts/non-perfect-retrieval-v1.jsonl"), "--non-perfect-output"),
+    summary_output: Path = typer.Option(Path("artifacts/retrieval-evaluation-qwen3-embedding-0.6b-v1.json"), "--summary-output"),
+    neighborhoods_output: Path = typer.Option(Path("artifacts/retrieval-neighborhoods-qwen3-embedding-0.6b-v1.jsonl"), "--neighborhoods-output"),
+    non_perfect_output: Path = typer.Option(Path("artifacts/non-perfect-retrieval-qwen3-embedding-0.6b-v1.jsonl"), "--non-perfect-output"),
 ) -> None:
     """Run leave-one-out Top-5/Top-10 retrieval evaluation."""
     mongo_client, repository, _ = open_repository()
@@ -141,7 +141,7 @@ def evaluate(
 
 @app.command("report")
 def report(
-    summary_path: Path = typer.Option(Path("artifacts/retrieval-evaluation-bge-m3-v1.json"), "--summary-path", exists=True, dir_okay=False),
+    summary_path: Path = typer.Option(Path("artifacts/retrieval-evaluation-qwen3-embedding-0.6b-v1.json"), "--summary-path", exists=True, dir_okay=False),
 ) -> None:
     """Print persisted embedding counts and the latest retrieval evaluation."""
     mongo_client, repository, validation = open_repository()

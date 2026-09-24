@@ -65,13 +65,13 @@ The dataset retains Question text and structured attempt metrics, but excludes `
 
 ## Embedding Dataset Builder + Retrieval Evaluation V1
 
-Build or refresh BGE-M3 embeddings for the 250 `capability-v1` questions:
+Build or refresh Qwen3-Embedding-0.6B embeddings for the 250 `capability-v1` questions:
 
 ```bash
 python -m qwen_inference_lab.embedding.cli build
 ```
 
-The default service is `http://192.168.100.233:8092/v1` with model `BAAI/bge-m3`. Use `--base-url`, `--model`, `--timeout`, `--retries`, and `--batch-size` to override request settings; use `--force` to regenerate unchanged records. The embedding input is the Question text only.
+The default service is `http://192.168.100.233:8093/v1` with model `Qwen/Qwen3-Embedding-0.6B` and embedding version `qwen3-embedding-0.6b-v1`. Use `--base-url`, `--model`, `--timeout`, `--retries`, and `--batch-size` to override request settings; use `--force` to regenerate unchanged records. The embedding input is the Question text only.
 
 Run a cosine-similarity lookup or the full leave-one-out evaluation:
 
@@ -88,11 +88,11 @@ python -m qwen_inference_lab.embedding.cli report
 
 Embedding records are stored in MongoDB `question_embeddings`, uniquely keyed by `(questionId, embeddingVersion)`. Generated files are:
 
-- `artifacts/embedding-dataset-bge-m3-v1.jsonl` (metadata and vectors)
-- `artifacts/embedding-dataset-bge-m3-v1.csv` (metadata only)
-- `artifacts/retrieval-evaluation-bge-m3-v1.json`
-- `artifacts/retrieval-neighborhoods-bge-m3-v1.jsonl`
-- `artifacts/non-perfect-retrieval-v1.jsonl`
+- `artifacts/embedding-dataset-qwen3-embedding-0.6b-v1.jsonl` (metadata and vectors)
+- `artifacts/embedding-dataset-qwen3-embedding-0.6b-v1.csv` (metadata only)
+- `artifacts/retrieval-evaluation-qwen3-embedding-0.6b-v1.json`
+- `artifacts/retrieval-neighborhoods-qwen3-embedding-0.6b-v1.jsonl`
+- `artifacts/non-perfect-retrieval-qwen3-embedding-0.6b-v1.jsonl`
 
 ## Router V1 — KNN + OOD Offline Evaluation
 

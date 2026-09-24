@@ -28,8 +28,8 @@ def capability(question="question", question_id="Q1"):
 def existing(question="question"):
     return {
         "questionId": "Q1",
-        "embeddingVersion": "bge-m3-v1",
-        "model": "BAAI/bge-m3",
+        "embeddingVersion": "qwen3-embedding-0.6b-v1",
+        "model": "Qwen/Qwen3-Embedding-0.6B",
         "baseUrl": "http://embedding.test/v1",
         "dimension": 2,
         "textHash": text_hash(question),
@@ -41,7 +41,7 @@ def test_same_text_hash_skips_embedding_generation():
     embedder = Embedder()
     records, stats = build_embedding_records(
         [capability()], {"Q1": existing()}, embedder,
-        model="BAAI/bge-m3", base_url="http://embedding.test/v1",
+        model="Qwen/Qwen3-Embedding-0.6B", base_url="http://embedding.test/v1",
     )
     assert embedder.calls == []
     assert stats.generated == 0
@@ -53,7 +53,7 @@ def test_question_change_triggers_embedding_generation():
     embedder = Embedder()
     records, stats = build_embedding_records(
         [capability("changed")], {"Q1": existing()}, embedder,
-        model="BAAI/bge-m3", base_url="http://embedding.test/v1",
+        model="Qwen/Qwen3-Embedding-0.6B", base_url="http://embedding.test/v1",
     )
     assert embedder.calls == [(["changed"], 32)]
     assert stats.generated == 1
@@ -64,5 +64,5 @@ def test_duplicate_question_id_is_rejected():
     with pytest.raises(ValueError, match="Duplicate questionId"):
         build_embedding_records(
             [capability(), capability()],
-            {}, Embedder(), model="BAAI/bge-m3", base_url="http://embedding.test/v1",
+            {}, Embedder(), model="Qwen/Qwen3-Embedding-0.6B", base_url="http://embedding.test/v1",
         )
