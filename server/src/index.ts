@@ -13,6 +13,7 @@ import { QuestionStore, RunStore } from './store.js';
 import { connectDatabase } from './database.js';
 import { QuestionImages } from './images.js';
 import { ModelStore, validateModel } from './models.js';
+import { RouterPredictionStore, RouterRuntimeClient, validateRouterPreviewRequest } from './router-preview.js';
 import { runStream } from './run-stream.js';
 import { EvaluationStore, type EvaluationQuery } from './evaluations.js';
 const root = fileURLToPath(new URL('../../', import.meta.url));
@@ -20,6 +21,8 @@ const { client, db } = await connectDatabase();
 const store = new RunStore(db);
 const questions = new QuestionStore(db);
 const models = new ModelStore(db);
+const routerRuntime = new RouterRuntimeClient();
+const routerPredictions = new RouterPredictionStore(db);
 const evaluations = new EvaluationStore(db);
 const initialBase = process.env.MODEL_BASE_URL || 'http://192.168.8.231:8200/v1';
 const initialModel = process.env.MODEL_NAME || 'qwen38-27b';
@@ -27,6 +30,7 @@ const images = new QuestionImages(path.resolve(root, process.env.IMAGES_DIR || '
 try {
   await store.initialize(); await questions.initialize();
   await models.initialize({ baseUrl: initialBase, modelName: initialModel });
+  await routerPredictions.initialize();
   if (!await questions.count()) throw new Error('MongoDB 题库为空，请先运行 npm run db:migrate');
 } catch {
   await client.close(); throw new Error('数据库初始化失败，请检查权限并先运行 npm run db:migrate');
@@ -36,7 +40,7 @@ await app.register(swagger, {
   openapi: {
     info: { title: '数学测试台 API', version: '1.0.0', description: '本机数学模型测试、模型配置与运行历史接口。API Key 不会通过任何读取接口返回。' },
     servers: [{ url: 'http://127.0.0.1:3100', description: '本机服务' }],
-    tags: [{ name: '系统' }, { name: '模型配置' }, { name: '题库' }, { name: '运行记录' }, { name: '测试' }],
+    tags: [{ name: '系统' }, { name: '模型配置' }, { name: '题库' }, { name: '运行记录' }, { name: 'Router 实验' }, { name: '测试' }],
   },
 });
 await app.register(swaggerUi, { routePrefix: '/docs', uiConfig: { docExpansion: 'list', deepLinking: false } });
@@ -75,6 +79,40 @@ app.post('/api/models/selection', { schema: { tags: ['模型配置'], summary: '
   await models.select(id); return { ok: true };
 });
 app.get('/api/questions', { schema: { tags: ['题库'], summary: '列出全部题目' } }, async () => Promise.all((await questions.list()).map(q => images.decorate(q))));
+app.post('/api/router/preview', {
+  schema: {
+    tags: ['Router 实验'],
+    summary: '影子模式预测新题应走 Local 或 Cloud',
+    description: '只返回实验性路由建议并保存预测，不会启动模型推理。',
+    body: {
+      type: 'object',
+      required: ['question'],
+      properties: {
+        question: { type: 'string', minLength: 1, maxLength: 50000 },
+        profile: { type: 'string', enum: ['development', 'conservative'], default: 'development' },
+        questionId: { type: 'string', description: '可选；预览题库已有题时用于从邻居中排除自身' },
+      },
+    },
+  },
+}, async (req, reply) => {
+  let input;
+  try { input = validateRouterPreviewRequest(req.body); }
+  catch (error) { return reply.code(400).send({ error: (error as Error).message }); }
+  try {
+    const prediction = await routerRuntime.preview(input);
+    const record = {
+      ...prediction,
+      predictionId: crypto.randomUUID(),
+      question: input.question,
+      ...(input.questionId ? { questionId: input.questionId } : {}),
+      createdAt: new Date().toISOString(),
+    };
+    await routerPredictions.save(record);
+    return record;
+  } catch {
+    return reply.code(503).send({ error: 'Router Runtime 不可用，请检查 Python 服务和 Embedding 服务' });
+  }
+});
 app.get('/api/questions/:id/images/:kind', { schema: { tags: ['题库'], summary: '获取题目或参考答案图片', params: { type: 'object', required: ['id', 'kind'], properties: { id: { type: 'string' }, kind: { type: 'string', enum: ['question', 'answer'] } } } } }, async (req, reply) => {
   const { id, kind } = req.params as { id: string; kind: string };
   if (!['question', 'answer'].includes(kind)) return reply.code(404).send({ error: '图片不存在' });

@@ -8,6 +8,7 @@ import { SourceImage } from './SourceImage';
 import { CopyButton } from './CopyButton';
 import { Reasoning } from './Reasoning';
 import { EvaluationsPage } from './EvaluationsPage';
+import { RouterPreviewPage } from './RouterPreviewPage';
 import './interaction.css';
 import './history.css';
 import 'katex/dist/katex.min.css';
@@ -19,7 +20,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const r = await fetch(url, init); const body = await r.json();
   if (!r.ok) throw new Error(body.error || `HTTP ${r.status}`); return body;
 }
-function LabApp({ onEvaluations }: { onEvaluations: () => void }) {
+function LabApp({ onEvaluations, onRouter }: { onEvaluations: () => void; onRouter: () => void }) {
   const [questions, setQuestions] = useState<Question[]>([]); const [runs, setRuns] = useState<Run[]>([]);
   const [selected, setSelected] = useState(''); const [search, setSearch] = useState('');
   const [tag, setTag] = useState(''); const [difficulty, setDifficulty] = useState('');
@@ -112,6 +113,7 @@ function LabApp({ onEvaluations }: { onEvaluations: () => void }) {
   return <div className="app">
     <aside><div className="brand"><span className="logo">∑</span><div><strong>数学测试台</strong><small>QWEN · CoT LAB</small></div></div>
       <button className="evaluation-nav" onClick={onEvaluations}>机器评测结果 <span>查看</span></button>
+      <button className="evaluation-nav" onClick={onRouter}>Router 影子测试 <span>实验</span></button>
       <ModelSelector value={selectedModel} onChange={setSelectedModel} disabled={hasActive}/>
       <div className="library-title">题库 <span>{questions.length} 题</span></div>
       <input aria-label="搜索题目" placeholder="搜索题号或题目…" value={search} onChange={e => setSearch(e.target.value)}/>
@@ -138,7 +140,12 @@ function LabApp({ onEvaluations }: { onEvaluations: () => void }) {
     </main></div>;
 }
 function App() {
-  const [view, setView] = useState<"lab" | "evaluations">("lab");
-  return view === "evaluations" ? <EvaluationsPage onBack={() => setView("lab")}/> : <LabApp onEvaluations={() => setView("evaluations")}/>;
+  const [view, setView] = useState<"lab" | "evaluations" | "router">("lab");
+  if (view === "evaluations") return <EvaluationsPage onBack={() => setView("lab")}/>;
+  if (view === "router") return <RouterPreviewPage onBack={() => setView("lab")}/>;
+  return <LabApp
+    onEvaluations={() => setView("evaluations")}
+    onRouter={() => setView("router")}
+  />;
 }
 createRoot(document.getElementById("root")!).render(<React.StrictMode><App/></React.StrictMode>);

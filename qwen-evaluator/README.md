@@ -94,7 +94,7 @@ Embedding records are stored in MongoDB `question_embeddings`, uniquely keyed by
 - `artifacts/retrieval-neighborhoods-qwen3-embedding-0.6b-v1.jsonl`
 - `artifacts/non-perfect-retrieval-qwen3-embedding-0.6b-v1.jsonl`
 
-## Router V1 — KNN + OOD Offline Evaluation
+## Router V1 — KNN + OOD Evaluation and Shadow Runtime
 
 Run the deterministic stratified evaluation or inspect one cross-validated prediction:
 
@@ -104,9 +104,13 @@ python -m qwen_inference_lab.router.cli report
 python -m qwen_inference_lab.router.cli inspect --question-id MATH-151
 ```
 
-Router V1 is offline-only. It uses embeddings and reference-corpus capability labels, never `difficulty`, `mathType`, `tag`, answers, or reasoning as decision features. Each held-out query is excluded from its fold's reference corpus. Unknown labels remain in retrieval output but are excluded from ground-truth metrics and success/risk aggregation.
+Router V1 keeps the offline evaluation core and also provides an internal shadow runtime. It uses embeddings and reference-corpus capability labels, never `difficulty`, `mathType`, `tag`, answers, or reasoning as decision features. Each held-out query is excluded from its fold's reference corpus. Unknown labels remain in retrieval output but are excluded from ground-truth metrics and success/risk aggregation.
 
 The full OOF threshold sweep is exploratory. Reported candidate operating points use nested CV: each outer fold is configured by inner CV on its 200-question training corpus only. `falseLocalRate` is defined as `FP / actual unsafe`.
+
+The default development profile uses `knn_ood`, `k=10`, `scoreThreshold=1.0`, `weightPower=1`, and `oodThreshold=0.6`. Its OOF metrics are for workflow development, while `conservativeRecommended` retains the nested-CV 95% precision policy.
+
+Start the Python runtime from the repository root with `npm run router:runtime`, or start the runtime, Fastify, and Vite together with `npm run dev:router`. The public `POST /api/router/preview` endpoint remains shadow-only: it does not run a model and stores each prediction in the shared MongoDB `router_predictions` collection. Set `ROUTER_RUNTIME_URL` and `ROUTER_RUNTIME_TIMEOUT_MS` to override the Fastify-to-Python connection.
 
 Generated files:
 
@@ -117,7 +121,7 @@ Generated files:
 
 ## Safety and persistence
 
-Every command validates MongoDB with ping/database name/question count/run count before writes. Tool data is stored only in `question_gold_profiles`, `evaluations`, `question_capabilities`, and `question_embeddings`; original Questions and Run answers/reasoning are not modified. API keys remain in memory and are never persisted in evidence.
+Every command validates MongoDB with ping/database name/question count/run count before writes. Tool data is stored only in `question_gold_profiles`, `evaluations`, `question_capabilities`, and `question_embeddings`, and `router_predictions`; original Questions and Run answers/reasoning are not modified. API keys remain in memory and are never persisted in evidence.
 
 ## Tests
 

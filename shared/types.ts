@@ -50,3 +50,75 @@ export interface EvaluationListResponse {
   items: MachineEvaluation[]; total: number; page: number; limit: number;
   summary: EvaluationSummary;
 }
+export type RouterProfile = 'development' | 'conservative';
+export type RouterDecision = 'local' | 'cloud';
+
+export interface RouterPreviewRequest {
+  question: string;
+  profile: RouterProfile;
+  questionId?: string;
+}
+export interface RouterNeighbor {
+  questionId: string;
+  question: string;
+  similarity: number;
+  localSuccessRate: number;
+  labelUsable: boolean;
+  safeLocal: boolean | null;
+  mathType?: string | null;
+  difficulty?: string | null;
+  tag?: string | null;
+}
+export interface RouterFeatures {
+  k: number;
+  top1Similarity: number;
+  topKMeanSimilarity: number;
+  topKMinSimilarity: number;
+  similarityStd: number;
+  usableNeighborCount: number;
+  neighborSuccessMean: number | null;
+  neighborSuccessStd: number | null;
+  weightedSuccess: number | null;
+  weightedSuccessSquared: number | null;
+  nonPerfectNeighborCount: number;
+  nonPerfectNeighborRate: number | null;
+  weightedNonPerfectRate: number | null;
+  nearestNonPerfectSimilarity: number | null;
+  nearestSafeSimilarity: number | null;
+  safeVsRiskMargin: number | null;
+}
+export interface RouterPolicyConfig {
+  policy: string;
+  k: number;
+  scoreThreshold: number;
+  weightPower: number;
+  oodThreshold: number | null;
+  maxNonPerfectRate: number | null;
+  maxNearestNonPerfectSimilarity: number | null;
+  minSafeVsRiskMargin: number | null;
+}
+export interface RouterPreviewResponse {
+  profile: RouterProfile;
+  decision: RouterDecision;
+  score: number | null;
+  experimental: true;
+  reasonCodes: string[];
+  features: RouterFeatures;
+  neighbors: RouterNeighbor[];
+  policyConfig: RouterPolicyConfig;
+  routerVersion: string;
+  embeddingVersion: string;
+  embeddingModel: string;
+  corpusSize: number;
+  dimension: number;
+  textHash: string;
+  durationMs: number;
+  predictionId?: string;
+  createdAt?: string;
+}
+export interface RouterPredictionRecord extends RouterPreviewResponse {
+  predictionId: string;
+  question: string;
+  questionId?: string;
+  createdAt: string;
+}

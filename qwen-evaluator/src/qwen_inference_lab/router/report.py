@@ -114,7 +114,7 @@ def render_report(results: dict) -> str:
         ),
         f"CV: {results['cv']['folds']}-fold stratified, seed={results['cv']['seed']}",
         f"Threshold configurations: {results['sweep']['configurationCount']}",
-        "Recommended nested-CV result:",
+        "Recommended development profile (exploratory OOF):",
         f"  Local Precision: {recommended['localPrecision']}",
         f"  Local Coverage: {recommended['localCoverage']}",
         f"  False Local: {recommended['falseLocalCount']}",

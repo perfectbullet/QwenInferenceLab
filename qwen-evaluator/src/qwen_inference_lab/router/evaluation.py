@@ -26,6 +26,7 @@ SCORE_THRESHOLDS = (0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 
 NON_PERFECT_RATE_THRESHOLDS = (0.0, 0.20, 0.34, 0.50)
 NEAREST_RISK_THRESHOLDS = (0.75, 0.85, 0.95, 1.00)
 MARGIN_THRESHOLDS = (-0.10, 0.0, 0.05)
+PRECISION_TARGETS = (0.95, 0.97, 0.99)
 
 
 @dataclass(frozen=True)
@@ -279,7 +280,7 @@ def nested_cv_candidates(
     for policy in ("neighbor_mean", "weighted_knn", "knn_ood", "failure_aware"):
         for k in K_VALUES:
             specs.append((f"representative:{policy}:k={k}", 0.95, policy, k))
-    for target in (0.95, 0.97, 0.99):
+    for target in PRECISION_TARGETS:
         specs.append((f"selection-target:{target:.2f}", target, None, None))
 
     accumulators = {

@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -k \"tsx watch server/src/index.ts\" \"vite --host 127.0.0.1\"",
+    "router:runtime": "conda run -n qwen-evaluator uvicorn qwen_inference_lab.router.service:app --app-dir qwen-evaluator/src --host 127.0.0.1 --port 8100",
+    "dev:router": "concurrently -k \"npm run router:runtime\" \"tsx watch server/src/index.ts\" \"vite --host 127.0.0.1\"",
     "build": "npm run check && vite build",
     "start": "tsx server/src/index.ts",
     "check": "tsc --noEmit",

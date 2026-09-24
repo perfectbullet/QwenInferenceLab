@@ -13,6 +13,7 @@ from . import DEFAULT_FOLDS, DEFAULT_SEED, ROUTER_VERSION
 from .dataset import load_router_dataset
 from .evaluation import (
     K_VALUES,
+    PRECISION_TARGETS,
     build_cv_features,
     nested_cv_candidates,
     decisions_for_config,
@@ -20,6 +21,7 @@ from .evaluation import (
     policy_configs,
     precision_coverage_frontier,
     threshold_sweep,
+    summarize_decisions,
 )
 from .models import PolicyConfig
 from .report import (
@@ -82,7 +84,7 @@ def evaluate(
         }
 
     target_results: dict[str, dict] = {}
-    for target in (0.95, 0.97, 0.99):
+    for target in PRECISION_TARGETS:
         candidate = nested_by_source[f"selection-target:{target:.2f}"]
         summary = candidate["summary"]
         actual_precision = summary["pooled"]["localPrecision"]
@@ -96,7 +98,7 @@ def evaluate(
         }
 
     achieved_operating_points: dict[str, dict] = {}
-    for target in (0.95, 0.97, 0.99):
+    for target in PRECISION_TARGETS:
         eligible = [
             item for item in nested_candidates
             if item["summary"]["pooled"]["localDecisionCount"] > 0
@@ -133,24 +135,29 @@ def evaluate(
             -item["summary"]["pooled"]["localCoverage"],
         ),
     )
-    primary_point = achieved_operating_points["0.95"]
-    if primary_point["achievable"]:
-        primary_candidate = nested_by_source[primary_point["source"]]
-        recommended_selection = (
+    conservative_point = achieved_operating_points["0.95"]
+    if conservative_point["achievable"]:
+        conservative_candidate = nested_by_source[conservative_point["source"]]
+        conservative_selection = (
             "maximum coverage among nested-CV candidates reaching "
             "95% pooled precision"
         )
     else:
-        primary_candidate = safest_candidate
-        recommended_selection = (
+        conservative_candidate = safest_candidate
+        conservative_selection = (
             "95% precision was not achievable; using minimum False Local "
             "then maximum coverage"
         )
-    recommended_summary = primary_candidate["summary"]
-    recommended_decisions = primary_candidate["decisions"]
+    development_config = PolicyConfig(
+        policy="knn_ood", k=10, scoreThreshold=1.0,
+        weightPower=1, oodThreshold=0.6,
+    )
+    recommended_decisions = decisions_for_config(rows, development_config)
+    recommended_summary = summarize_decisions(recommended_decisions, folds)
+    recommended_selection = "fixed development profile; exploratory OOF metrics"
 
     exploratory_targets: dict[str, dict | None] = {}
-    for target in (0.95, 0.97, 0.99):
+    for target in PRECISION_TARGETS:
         item = exploratory_operating_point(sweep, target)
         exploratory_targets[f"{target:.2f}"] = (
             {"config": item["config"], "metrics": item["metrics"]}
@@ -210,7 +217,7 @@ def evaluate(
         "sweep": {
             "configurationCount": len(sweep),
             "exploratoryOnly": True,
-            "note": "Full OOF frontier is exploratory; recommended metrics use nested CV threshold selection.",
+            "note": "Full OOF frontier and the development profile are exploratory; conservativeRecommended uses nested CV threshold selection.",
         },
         "representativeResults": representative,
         "precisionCoverageFrontier": [
@@ -231,11 +238,18 @@ def evaluate(
             "selectionNote": "Exploratory OOF: minimum FP, then maximum non-zero coverage.",
         },
         "recommended": {
-            "target": 0.95,
-            "targetAchieved": primary_point["achievable"],
-            "source": primary_candidate["source"],
+            "profile": "development",
+            "source": "fixed-development-profile",
+            "config": development_config.model_dump(by_alias=True),
             "selection": recommended_selection,
             "metrics": recommended_summary,
+        },
+        "conservativeRecommended": {
+            "target": 0.95,
+            "targetAchieved": conservative_point["achievable"],
+            "source": conservative_candidate["source"],
+            "selection": conservative_selection,
+            "metrics": conservative_candidate["summary"],
         },
         "metricDefinitions": {
             "localPrecision": "TP / (TP + FP)",
@@ -291,11 +305,7 @@ def inspect(
     row = next((item for item in rows if item.record.question_id == question_id), None)
     if row is None:
         raise typer.BadParameter(f"Unknown questionId: {question_id}")
-    selected = next(
-        item for item in payload["recommended"]["metrics"]["selectedConfigs"]
-        if item["fold"] == row.fold
-    )
-    config = PolicyConfig.model_validate(selected["selectedConfig"])
+    config = PolicyConfig.model_validate(payload["recommended"]["config"])
     decision = decisions_for_config([row], config)[0]
     output = {
         "questionId": row.record.question_id,
