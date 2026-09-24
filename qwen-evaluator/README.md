@@ -94,6 +94,27 @@ Embedding records are stored in MongoDB `question_embeddings`, uniquely keyed by
 - `artifacts/retrieval-neighborhoods-bge-m3-v1.jsonl`
 - `artifacts/non-perfect-retrieval-v1.jsonl`
 
+## Router V1 — KNN + OOD Offline Evaluation
+
+Run the deterministic stratified evaluation or inspect one cross-validated prediction:
+
+```bash
+python -m qwen_inference_lab.router.cli evaluate --folds 5 --seed 42
+python -m qwen_inference_lab.router.cli report
+python -m qwen_inference_lab.router.cli inspect --question-id MATH-151
+```
+
+Router V1 is offline-only. It uses embeddings and reference-corpus capability labels, never `difficulty`, `mathType`, `tag`, answers, or reasoning as decision features. Each held-out query is excluded from its fold's reference corpus. Unknown labels remain in retrieval output but are excluded from ground-truth metrics and success/risk aggregation.
+
+The full OOF threshold sweep is exploratory. Reported candidate operating points use nested CV: each outer fold is configured by inner CV on its 200-question training corpus only. `falseLocalRate` is defined as `FP / actual unsafe`.
+
+Generated files:
+
+- `artifacts/router-v1-offline-results.json`
+- `artifacts/router-v1-threshold-sweep.csv`
+- `artifacts/router-v1-false-local.jsonl`
+- `artifacts/router-v1-non-perfect-analysis.jsonl`
+
 ## Safety and persistence
 
 Every command validates MongoDB with ping/database name/question count/run count before writes. Tool data is stored only in `question_gold_profiles`, `evaluations`, `question_capabilities`, and `question_embeddings`; original Questions and Run answers/reasoning are not modified. API keys remain in memory and are never persisted in evidence.

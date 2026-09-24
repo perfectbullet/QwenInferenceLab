@@ -129,6 +129,27 @@ Embedding 记录保存到 MongoDB `question_embeddings`，唯一键为 `(questio
 - `artifacts/retrieval-neighborhoods-bge-m3-v1.jsonl`
 - `artifacts/non-perfect-retrieval-v1.jsonl`
 
+## Router V1 — KNN + OOD 离线评估
+
+执行固定随机种子的分层评估，或检查单道题的交叉验证预测：
+
+```bash
+python -m qwen_inference_lab.router.cli evaluate --folds 5 --seed 42
+python -m qwen_inference_lab.router.cli report
+python -m qwen_inference_lab.router.cli inspect --question-id MATH-151
+```
+
+Router V1 仅用于离线研究。决策特征只使用 embedding 和 Reference Corpus 的 Capability 标签，不使用 `difficulty`、`mathType`、`tag`、答案或 reasoning。每个 held-out Query 都会从当前 Fold 的 Reference Corpus 中排除。未知标签仍可出现在检索结果中，但不会参与 Ground Truth 指标以及 success/risk 聚合。
+
+完整 OOF threshold sweep 仅用于探索。报告中的候选工作点使用 nested CV：每个外层 Fold 的参数只通过其 200 道训练题上的内部交叉验证选择。`falseLocalRate` 定义为 `FP / 实际 unsafe 数`。
+
+生成文件：
+
+- `artifacts/router-v1-offline-results.json`
+- `artifacts/router-v1-threshold-sweep.csv`
+- `artifacts/router-v1-false-local.jsonl`
+- `artifacts/router-v1-non-perfect-analysis.jsonl`
+
 ## 安全与持久化
 
 所有写操作前都会 ping MongoDB，并核验数据库名、Questions 数量和 Runs 数量。工具只写 `question_gold_profiles`、`evaluations`、`question_capabilities` 与 `question_embeddings`，不修改原始 Questions 或 Runs 的 answer/reasoning。API Key 只在内存中使用，不会写入证据。
